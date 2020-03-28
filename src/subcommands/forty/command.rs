@@ -169,12 +169,17 @@ impl IssueArgs {
         Script::from(self.receiver_address().payload()).calc_script_hash()
     }
 
-    pub fn amount_hash(&self) -> Bytes {
+    pub fn amount_hash(&self) -> Byte32 {
         let mut hasher = sha2::Sha256::new();
         let preimage = format!("{},{}", self.amount, self.nonce);
         hasher.input(preimage.as_bytes());
         let result = hasher.result();
-        result.as_slice().pack()
+
+        let hash = Byte32::from_slice(
+            result.as_slice()
+        ).unwrap();
+
+        hash
     }
 
     // encrypted_amount = receiver.pubkey.sign_recoverable()
@@ -196,9 +201,10 @@ impl IssueArgs {
 
     pub fn ft_output_data(&self) -> Bytes {
         BytesVec::new_builder()
-            .push(self.amount_hash())
-            .push(self.encrypted_amount())
-            .build().as_bytes()
+            .push(self.amount_hash().as_bytes().pack())
+            // .push(self.encrypted_amount())
+            .build()
+            .as_bytes()
             .pack()
     }
 
@@ -310,12 +316,16 @@ impl TransactArgs {
         Script::from(self.sender_address().payload()).calc_script_hash()
     }
 
-    pub fn amount_hash(&self) -> Bytes {
+    pub fn amount_hash(&self) -> Byte32 {
         let mut hasher = sha2::Sha256::new();
         let preimage = format!("{},{}", self.amount, self.nonce);
         hasher.input(preimage.as_bytes());
         let result = hasher.result();
-        result.as_slice().pack()
+        let hash = Byte32::from_slice(
+            result.as_slice()
+        ).unwrap();
+
+        hash
     }
 
     // encrypted_amount = receiver.pubkey.sign_recoverable()
@@ -340,8 +350,8 @@ impl TransactArgs {
     // OutputData Format: [ amount_hash, encrypted_amount ]
     pub fn ft_output_data(&self) -> Bytes {
         BytesVec::new_builder()
-            .push(self.amount_hash())
-            .push(self.encrypted_amount())
+            .push(self.amount_hash().as_bytes().pack())
+            // .push(self.encrypted_amount())
             .build()
             .as_bytes()
             .pack()

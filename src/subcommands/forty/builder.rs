@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use crate::subcommands::forty::command::{IssueArgs, TransactArgs};
 use ckb_types::packed::{CellDep, Byte32, Bytes, BytesOpt};
 use ckb_sdk::constants::MIN_SECP_CELL_CAPACITY;
-use crate::subcommands::forty::MIN_FT_CELL_CAPACITY;
+use crate::subcommands::forty::{MIN_FT_CELL_CAPACITY, TX_FEE};
 
 // NOTE: We assume all inputs are from same account
 #[derive(Debug)]
@@ -113,8 +113,9 @@ impl FortyBuilder {
 
             // NOTE: Here give null lock script to the output. It's caller's duty to fill the lock
             let input_capacity = self.live_cells.iter().map(|txo| txo.capacity).sum::<u64>();
+            let output_capacity = input_capacity - TX_FEE;
             let output = CellOutput::new_builder()
-                .capacity(input_capacity.pack())
+                .capacity(output_capacity.pack())
                 .type_(Some(ft_type_script).pack())
                 .build();
 
