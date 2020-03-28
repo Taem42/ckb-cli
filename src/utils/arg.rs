@@ -144,27 +144,27 @@ pub fn to_data_path<'a, 'b>() -> Arg<'a, 'b> {
         .help("Data binary file path store in target cell (optional)")
 }
 
-pub fn amount<'a, 'b>() -> Arg<'a, 'b> {
-    Arg::with_name("amount")
-        .long("amount")
-        .takes_value(true)
-        .validator(|input| {
-            input.parse::<u64>()
-                .map(|_| ())
-                .map_err(|err| err.to_string())
-        })
-}
-
-pub fn nonce<'a, 'b>() -> Arg<'a, 'b> {
-    Arg::with_name("nonce")
-        .long("nonce")
-        .takes_value(true)
-        .validator(|input| {
-            input.parse::<u64>()
-                .map(|_| ())
-                .map_err(|err| err.to_string())
-        })
-}
+//pub fn amount<'a, 'b>() -> Arg<'a, 'b> {
+//    Arg::with_name("amount")
+//        .long("amount")
+//        .takes_value(true)
+//        .validator(|input| {
+//            input.parse::<u64>()
+//                .map(|_| ())
+//                .map_err(|err| err.to_string())
+//        })
+//}
+//
+//pub fn nonce<'a, 'b>() -> Arg<'a, 'b> {
+//    Arg::with_name("nonce")
+//        .long("nonce")
+//        .takes_value(true)
+//        .validator(|input| {
+//            input.parse::<u64>()
+//                .map(|_| ())
+//                .map_err(|err| err.to_string())
+//        })
+//}
 
 pub fn capacity<'a, 'b>() -> Arg<'a, 'b> {
     Arg::with_name("capacity")
@@ -188,6 +188,14 @@ pub fn type_hash<'a, 'b>() -> Arg<'a, 'b> {
         .takes_value(true)
         .validator(|input| FixedHashParser::<H256>::default().validate(input))
         .help("The type script hash")
+}
+
+pub fn amount_hash<'a, 'b>() -> Arg<'a, 'b> {
+    Arg::with_name("amount-hash")
+        .long("amount-hash")
+        .takes_value(true)
+        .validator(|input| FixedHashParser::<H256>::default().validate(input))
+        .help("The amount hash, Hash(amount + nonce)")
 }
 
 pub fn code_hash<'a, 'b>() -> Arg<'a, 'b> {

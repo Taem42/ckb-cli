@@ -550,9 +550,8 @@ impl<'a> CliSubCommand for WalletSubCommand<'a> {
                     let tx_hash: H256 = tx.hash().unpack();
                     if !to_data.is_empty() {
                         let code_hash: Byte32 = Byte32::new(blake2b_256(to_data));
-                        // println!("code_hash: {:?}", code_hash);
                         println!(
-                            "\n./target/release/ckb-cli --wait-for-sync forty issue --ft-code-hash {:#x} --ft-out-point {:#x}-0 --amount 42 --nonce 142 --privkey-path /Users/apple/ckb-testing/bank0",
+                            "\n./target/release/ckb-cli --wait-for-sync forty issue --ft-code-hash {:#x} --ft-out-point {:#x}-0 --amount-hash e7b331d83f17550692fb998802b80dfb729a638052773f27ab3e1c7b09262e22 --privkey-path /Users/apple/ckb-testing/bank0",
                             code_hash,
                             tx_hash,
                         );

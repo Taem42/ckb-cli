@@ -41,7 +41,7 @@ impl<'a> CliSubCommand for FortySubCommand<'a> {
 
                 let tx_hash = transaction.hash();
                 println!(
-                    "./target/release/ckb-cli --wait-for-sync forty transfer --ft-code-hash {:#x} --ft-out-point {:#x}-0 --amount 41 --nonce 141 --privkey-path /Users/apple/ckb-testing/bank0 --ft-lock-hash {:#x} --out-point {:#x}-0 --pubkey 020563b349c7b4c4cf9f100c50cd6de400098542e4cab07a86af0bd6414a58258a --proof 9af1dfb406280f6996fd5503fa48c7bec2e4e351187ee14b147b55fa35eac527af9e2ff76cd63612cc140dcfeeb14adbccf1eca2303504b83bac4c98e0e997f3017ac005b17ca74c456e4a70f4db1e51b56543d534f474590553ec440e28846818f06bdb851427544ca17ea0b4fcc16fe26b7b0ecd8d4d32c645266c4ec692e4",
+                    "./target/release/ckb-cli --wait-for-sync forty transfer --ft-code-hash {:#x} --ft-out-point {:#x}-0 --amount-hash 97490a5ee735719234aa0317a44d2e8962e76fe3273bb79124de4053dc4a2434 --privkey-path /Users/apple/ckb-testing/bank0 --ft-lock-hash {:#x} --out-point {:#x}-0 --pubkey 020563b349c7b4c4cf9f100c50cd6de400098542e4cab07a86af0bd6414a58258a --proof 2de36a5b987c89b3b7de96a5d9563fccde1e5f9358371b098ec589c9ead54355867db0d4b674f3cd6b2f34b2266aec200a040f5beb80a5c1530262b27492d4911754b93046554fb44e9c871e4958e8461805c111ea5b000a01e35b076f74f7101d4cdf729302fbe4bdda37e17faaa9c81c5ac37bc1bbbefa71b0579fdffacfe8",
                     self.issue_args().ft_code_hash(),
                     self.issue_args().ft_out_point.tx_hash(),
                     self.issue_args().ft_lock_hash(),
@@ -83,8 +83,7 @@ impl<'a> FortySubCommand<'a> {
                     .about("Issue FT to admin self")
                     .arg(arg::privkey_path().required_unless(arg::from_account().b.name))
                     .arg(arg::ft_out_point().required(true))
-                    .arg(arg::amount().required(true))
-                    .arg(arg::nonce().required(true))
+                    .arg(arg::amount_hash().required(true))
                     .arg(arg::ft_code_hash().required(true))
         )
             .subcommand(
@@ -94,8 +93,7 @@ impl<'a> FortySubCommand<'a> {
                     .arg(arg::ft_out_point().required(true))
                     .arg(arg::out_point().required(true))
                     .arg(arg::pubkey().required(true))
-                    .arg(arg::amount().required(true))
-                    .arg(arg::nonce().required(true))
+                    .arg(arg::amount_hash().required(true))
                     .arg(arg::proof().required(true))
                     .arg(arg::ft_code_hash().required(true))
                     .arg(arg::ft_lock_hash().required(true))
@@ -111,8 +109,7 @@ impl<'a> FortySubCommand<'a> {
 pub struct IssueArgs {
     pub network_type: NetworkType,
     pub sender: PrivkeyWrapper,
-    pub amount: u64,
-    pub nonce: u64,
+    pub amount_hash: Byte32,
     pub ft_out_point: OutPoint,
     pub ft_code_hash: Byte32,
 }
@@ -121,8 +118,7 @@ pub struct TransactArgs {
     pub network_type: NetworkType,
     pub sender: PrivkeyWrapper,
     pub receiver: PublicKey,
-    pub amount: u64,
-    pub nonce: u64,
+    pub amount_hash: Byte32,
     pub proof: Bytes,
     pub out_point: OutPoint,
     pub ft_out_point: OutPoint,
@@ -134,20 +130,16 @@ impl IssueArgs {
     fn from_matches(m: &ArgMatches, network_type: NetworkType) -> Result<Self, String> {
         let sender: PrivkeyWrapper =
             PrivkeyPathParser.from_matches_opt(m, "privkey-path", true)?.unwrap();
-        let amount = m.value_of("amount").expect("expect amount").parse()
-            .map_err(|_| "failed to parse amount".to_string())?;
-        let nonce = m.value_of("nonce").expect("expect nonce").parse()
-            .map_err(|_| "failed to parse nonce".to_string())?;
         let ft_out_point: OutPoint = OutPointParser.from_matches(m, "ft-out-point")?;
         let ft_code_hash: H256 = FixedHashParser::<H256>::default().from_matches(m, "ft-code-hash")?;
+        let amount_hash: H256 = FixedHashParser::<H256>::default().from_matches(m, "amount-hash")?;
 
         Ok(Self {
             network_type,
             ft_out_point,
             ft_code_hash: Byte32::new(ft_code_hash.0),
             sender,
-            amount,
-            nonce,
+            amount_hash: Byte32::new(amount_hash.0),
         })
     }
 
@@ -170,16 +162,17 @@ impl IssueArgs {
     }
 
     pub fn amount_hash(&self) -> Byte32 {
-        let mut hasher = sha2::Sha256::new();
-        let preimage = format!("{},{}", self.amount, self.nonce);
-        hasher.input(preimage.as_bytes());
-        let result = hasher.result();
-
-        let hash = Byte32::from_slice(
-            result.as_slice()
-        ).unwrap();
-
-        hash
+        self.amount_hash.clone()
+//        let mut hasher = sha2::Sha256::new();
+//        let preimage = format!("{},{}", self.amount, self.nonce);
+//        hasher.input(preimage.as_bytes());
+//        let result = hasher.result();
+//
+//        let hash = Byte32::from_slice(
+//            result.as_slice()
+//        ).unwrap();
+//
+//        hash
     }
 
     // encrypted_amount = receiver.pubkey.sign_recoverable()
@@ -187,8 +180,9 @@ impl IssueArgs {
         // As for command "issue", the sender and receiver are the same.
 //        let receiver = &self.sender;
 
-        let preimage = format!("{},{}", self.amount, self.nonce);
-        preimage.pack()
+        //let preimage = format!("{},{}", self.amount, self.nonce);
+        //preimage.pack()
+        Default::default()
 //        let message = secp256k1::Message::from_slice(preimage.as_bytes())
 //            .expect("Failed to convert FT preimage to secp256k1 message");
 //
@@ -254,27 +248,24 @@ impl TransactArgs {
         let sender: PrivkeyWrapper =
             PrivkeyPathParser.from_matches(m, "privkey-path")?;
         let receiver = PubkeyHexParser.from_matches(m, "pubkey").unwrap();
-        let amount = m.value_of("amount").expect("expect amount").parse()
-            .map_err(|_| "failed to parse amount".to_string())?;
-        let nonce = m.value_of("nonce").expect("expect nonce").parse()
-            .map_err(|_| "failed to parse nonce".to_string())?;
         let out_point: OutPoint = OutPointParser.from_matches(m, "out-point")?;
         let ft_code_hash: H256 = FixedHashParser::<H256>::default().from_matches(
             m, "ft-code-hash")?;
         let ft_lock_hash: H256 = FixedHashParser::<H256>::default().from_matches(
             m, "ft-lock-hash")?;
+        let amount_hash: H256 = FixedHashParser::<H256>::default().from_matches(
+            m, "amount-hash")?;
         let proof: Bytes = m.value_of("proof").expect("expect proof").pack();
         Ok(Self {
             network_type,
             sender,
             receiver,
-            amount,
-            nonce,
             proof,
             out_point,
             ft_out_point,
             ft_code_hash: Byte32::new(ft_code_hash.0),
             ft_lock_hash: Byte32::new(ft_lock_hash.0),
+            amount_hash: Byte32::new(amount_hash.0),
         })
     }
 
@@ -317,15 +308,16 @@ impl TransactArgs {
     }
 
     pub fn amount_hash(&self) -> Byte32 {
-        let mut hasher = sha2::Sha256::new();
-        let preimage = format!("{},{}", self.amount, self.nonce);
-        hasher.input(preimage.as_bytes());
-        let result = hasher.result();
-        let hash = Byte32::from_slice(
-            result.as_slice()
-        ).unwrap();
-
-        hash
+        self.amount_hash.clone()
+//        let mut hasher = sha2::Sha256::new();
+//        let preimage = format!("{},{}", self.amount, self.nonce);
+//        hasher.input(preimage.as_bytes());
+//        let result = hasher.result();
+//        let hash = Byte32::from_slice(
+//            result.as_slice()
+//        ).unwrap();
+//
+//        hash
     }
 
     // encrypted_amount = receiver.pubkey.sign_recoverable()
@@ -334,8 +326,9 @@ impl TransactArgs {
         // As for command "issue", the sender and receiver are the same.
 //        let receiver = &self.receiver;
 
-        let preimage = format!("{},{}", self.amount, self.nonce);
-        preimage.pack()
+        // let preimage = format!("{},{}", self.amount, self.nonce);
+        // preimage.pack()
+        Default::default()
 //        let message = secp256k1::Message::from_slice(preimage.as_bytes())
 //            .expect("Failed to convert FT preimage to secp256k1 message");
 //
@@ -347,7 +340,6 @@ impl TransactArgs {
         // Bytes::from(serialized_signature[..].to_vec())
     }
 
-    // OutputData Format: [ amount_hash, encrypted_amount ]
     pub fn ft_output_data(&self) -> Bytes {
         BytesVec::new_builder()
             .push(self.amount_hash().as_bytes().pack())
