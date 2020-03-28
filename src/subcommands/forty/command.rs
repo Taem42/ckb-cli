@@ -87,7 +87,7 @@ impl<'a> FortySubCommand<'a> {
                     .arg(arg::amount().required(true))
                     .arg(arg::nonce().required(true))
                     .arg(arg::ft_code_hash().required(true))
-                    .arg(arg::ft_lock_arg().required(true))
+                    .arg(arg::ft_lock_hash().required(true))
         )
     }
 }
@@ -115,7 +115,7 @@ pub struct TransactArgs {
     pub out_point: OutPoint,
     pub ft_out_point: OutPoint,
     pub ft_code_hash: Byte32,
-    pub ft_lock_args: H160,
+    pub ft_lock_hash: Byte32,
 }
 
 impl IssueArgs {
@@ -190,10 +190,10 @@ impl IssueArgs {
             .pack()
     }
 
-    // 只有 IssueArgs 有 ft_lock_args()，因为可以从 privkey 里推导出来
+    // 只有 IssueArgs 有 ft_lock_hash()，因为可以从 privkey 里推导出来
     // 至于 TransactArgs，那应该从 input 的 type_script.args 里拿出来（其实直接拷贝整个 type_script 即可）
-    pub fn ft_lock_args(&self) -> H160 {
-        self.sender_sighash_args()
+    pub fn ft_lock_hash(&self) -> Byte32 {
+        self.sender_lock_hash()
     }
 
     pub fn ft_code_hash(&self) -> Byte32 {
@@ -202,11 +202,11 @@ impl IssueArgs {
 
     pub fn ft_type_script(&self) -> Script {
         let ft_code_hash = self.ft_code_hash();
-        let ft_lock_args = self.ft_lock_args();
+        let ft_lock_hash = self.ft_lock_hash();
         Script::new_builder()
             .hash_type(ScriptHashType::Data.into())
             .code_hash(ft_code_hash)
-            .args(ft_lock_args.0.pack())
+            .args(ft_lock_hash.as_bytes().pack())
             .build()
     }
 
@@ -243,7 +243,8 @@ impl TransactArgs {
         let out_point: OutPoint = OutPointParser.from_matches(m, "out-point")?;
         let ft_code_hash: H256 = FixedHashParser::<H256>::default().from_matches(
             m, "ft-code-hash")?;
-        let ft_lock_args = FixedHashParser::<H160>::default().from_matches(m, "ft-lock-args")?;
+        let ft_lock_hash: H256 = FixedHashParser::<H256>::default().from_matches(
+            m, "ft-lock-hash")?;
         Ok(Self {
             network_type,
             sender,
@@ -253,7 +254,7 @@ impl TransactArgs {
             out_point,
             ft_out_point,
             ft_code_hash: Byte32::new(ft_code_hash.0),
-            ft_lock_args,
+            ft_lock_hash: Byte32::new(ft_lock_hash.0),
         })
     }
 
@@ -332,17 +333,17 @@ impl TransactArgs {
         self.ft_code_hash.clone()
     }
 
-    pub fn ft_lock_args(&self) -> H160 {
-        self.ft_lock_args.clone()
+    pub fn ft_lock_hash(&self) -> Byte32 {
+        self.ft_lock_hash.clone()
     }
 
     pub fn ft_type_script(&self) -> Script {
         let ft_code_hash = self.ft_code_hash();
-        let ft_lock_args = self.ft_lock_args();
+        let ft_lock_hash = self.ft_lock_hash();
         Script::new_builder()
             .hash_type(ScriptHashType::Data.into())
             .code_hash(ft_code_hash)
-            .args(ft_lock_args.0.pack())
+            .args(ft_lock_hash.as_bytes().pack())
             .build()
     }
 
