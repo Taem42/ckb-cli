@@ -66,7 +66,7 @@ impl<'a> CliSubCommand for FortySubCommand<'a> {
 
 impl<'a> FortySubCommand<'a> {
     pub fn subcommand() -> App<'static, 'static> {
-        SubCommand::with_name("dao")
+        SubCommand::with_name("forty")
             .about("FortyToken operations")
             .subcommand(
                 SubCommand::with_name("issue")

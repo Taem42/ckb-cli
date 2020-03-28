@@ -64,7 +64,7 @@ impl<'a> FortySubCommand<'a> {
     // Issue, traditional sighash cell => FT cell
     pub fn issue(&mut self) -> Result<TransactionView, String> {
         self.check_db_ready()?;
-        let target_ckb_capacity = MIN_FT_CELL_CAPACITY + TX_FEE;
+        let target_ckb_capacity = 2 * MIN_FT_CELL_CAPACITY + TX_FEE;
         let sender_address = self.issue_args().sender_address().clone();
         let cells = self.collect_sighash_cells(sender_address, target_ckb_capacity)?;
         let raw_transaction = self.build(cells).issue(

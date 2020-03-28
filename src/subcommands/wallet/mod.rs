@@ -39,6 +39,7 @@ use ckb_sdk::{
     Since, SinceType, TxHelper, SECP256K1,
 };
 pub use index::start_index_thread;
+use ckb_hash::blake2b_256;
 
 // Max derived change address to search
 const DERIVE_CHANGE_ADDRESS_MAX_LEN: u32 = 10000;
@@ -540,13 +541,17 @@ impl<'a> CliSubCommand for WalletSubCommand<'a> {
                         .value_of("derive-change-address")
                         .map(|s| s.to_string()),
                     to_address: get_arg_value(m, "to-address")?,
-                    to_data: Some(to_data),
+                    to_data: Some(to_data.clone()),
                 };
                 let tx = self.transfer(args, false)?;
                 if debug {
                     Ok(ckb_jsonrpc_types::TransactionView::from(tx).render(format, color))
                 } else {
                     let tx_hash: H256 = tx.hash().unpack();
+                    if !to_data.is_empty() {
+                        let code_hash: Byte32 = Byte32::new(blake2b_256(to_data));
+                        println!("code_hash: {:?}", code_hash);
+                    }
                     Ok(tx_hash.render(format, color))
                 }
             }

@@ -10,10 +10,7 @@ use std::collections::HashSet;
 use crate::subcommands::forty::command::{IssueArgs, TransactArgs};
 use ckb_types::packed::{CellDep, Byte32, Bytes, BytesOpt};
 use ckb_sdk::constants::MIN_SECP_CELL_CAPACITY;
-
-pub struct ZKProof {
-    // TODO
-}
+use crate::subcommands::forty::MIN_FT_CELL_CAPACITY;
 
 // NOTE: We assume all inputs are from same account
 #[derive(Debug)]
@@ -54,10 +51,12 @@ impl FortyBuilder {
             let output_data = issue_args.ft_output_data();
 
             // NOTE: Here give null lock script to the output. It's caller's duty to fill the lock
+            let dirty_capacity = Capacity::bytes(output_data.len()).unwrap().as_u64() +
+                MIN_FT_CELL_CAPACITY;
             let output = CellOutput::new_builder()
                 .type_(Some(ft_type_script).pack())
                 .build_exact_capacity(
-                    Capacity::bytes(output_data.len()).unwrap()
+                    Capacity::shannons(dirty_capacity)
                 ).expect("build issued FT output");
             (output, output_data)
         };
