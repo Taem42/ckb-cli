@@ -30,7 +30,7 @@ pub mod util;
 
 // TODO 之后改掉。这里只是为了保证之后的操作有足够的 fee，偷个懒
 const MIN_FT_CELL_CAPACITY: u64 = MIN_SECP_CELL_CAPACITY + 100 * 100;
-const TX_FEE: u64 = 1;
+const TX_FEE: u64 = 1000;
 
 pub struct FortySubCommand<'a> {
     rpc_client: &'a mut HttpRpcClient,
@@ -86,12 +86,12 @@ impl<'a> FortySubCommand<'a> {
         // let raw_transaction = self.build(ft_cells).transfer(&self.transact_args.unwrap())?;
         // FIXME 这里先 mock proof 了
         let raw_transaction = self.build(ft_cells).transfer(
-            self.transact_args.as_ref().unwrap(), Default::default())?;
+            self.transact_args.as_ref().unwrap(), self.transact_args().proof())?;
         self.sign(raw_transaction)
     }
 
     pub fn collect_sender_ft_cells(&mut self) -> Result<Vec<LiveCellInfo>, String>{
-        let ft_type_hash = self.ft_type_hash();
+        let ft_code_hash = self.ft_code_hash();
         let lock_hash = self.sender_lock_hash();
         self.with_db(|db, _| {
             let cells_by_lock = db
@@ -99,7 +99,7 @@ impl<'a> FortySubCommand<'a> {
                 .into_iter()
                 .collect::<HashSet<_>>();
             let cells_by_code = db
-                .get_live_cells_by_code(ft_type_hash.clone(), Some(0), |_, _| (false, true))
+                .get_live_cells_by_code(ft_code_hash.clone(), Some(0), |_, _| (false, true))
                 .into_iter()
                 .collect::<HashSet<_>>();
             cells_by_lock
@@ -237,7 +237,6 @@ impl<'a> FortySubCommand<'a> {
             .build())
     }
 
-
     fn collect_sighash_cells(&mut self, address: Address, target_capacity: u64) -> Result<Vec<LiveCellInfo>, String> {
         let mut enough = false;
         let mut take_capacity = 0;
@@ -332,6 +331,16 @@ impl<'a> FortySubCommand<'a> {
             issue_args.ft_type_script().calc_script_hash()
         } else if let Some(transact_args) = self.transact_args.as_ref() {
             transact_args.ft_type_script().calc_script_hash()
+        } else {
+            unreachable!()
+        }
+    }
+
+    pub fn ft_code_hash(&self) -> Byte32 {
+        if let Some(ref issue_args) = self.issue_args.as_ref() {
+            issue_args.ft_code_hash()
+        } else if let Some(transact_args) = self.transact_args.as_ref() {
+            transact_args.ft_code_hash()
         } else {
             unreachable!()
         }

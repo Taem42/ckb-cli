@@ -83,7 +83,7 @@ pub fn ft_lock_hash<'a, 'b>() -> Arg<'a, 'b> {
     Arg::with_name("ft-lock-hash")
         .long("ft-lock-hash")
         .takes_value(true)
-        .validator(|input| FixedHashParser::<H160>::default().validate(input))
+        .validator(|input| FixedHashParser::<H256>::default().validate(input))
         .help("identifier of the token")
 }
 
@@ -126,6 +126,14 @@ pub fn to_data<'a, 'b>() -> Arg<'a, 'b> {
         .takes_value(true)
         .validator(|input| HexParser.validate(input))
         .help("Hex data store in target cell (optional)")
+}
+
+pub fn proof<'a, 'b>() -> Arg<'a, 'b> {
+    Arg::with_name("proof")
+        .long("proof")
+        .takes_value(true)
+        .validator(|input| HexParser.validate(input))
+        .help("zk-proof")
 }
 
 pub fn to_data_path<'a, 'b>() -> Arg<'a, 'b> {

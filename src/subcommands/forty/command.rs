@@ -38,6 +38,16 @@ impl<'a> CliSubCommand for FortySubCommand<'a> {
             ("issue", Some(m)) => {
                 self.issue_args = Some(IssueArgs::from_matches(m, network_type)?);
                 let transaction = self.issue()?;
+
+                let tx_hash = transaction.hash();
+                println!(
+                    "./target/release/ckb-cli --wait-for-sync forty transfer --ft-code-hash {:#x} --ft-out-point {:#x}-0 --amount 41 --nonce 141 --privkey-path /Users/apple/ckb-testing/bank0 --ft-lock-hash {:#x} --out-point {:#x}-0 --pubkey 020563b349c7b4c4cf9f100c50cd6de400098542e4cab07a86af0bd6414a58258a --proof 9af1dfb406280f6996fd5503fa48c7bec2e4e351187ee14b147b55fa35eac527af9e2ff76cd63612cc140dcfeeb14adbccf1eca2303504b83bac4c98e0e997f3017ac005b17ca74c456e4a70f4db1e51b56543d534f474590553ec440e28846818f06bdb851427544ca17ea0b4fcc16fe26b7b0ecd8d4d32c645266c4ec692e4",
+                    self.issue_args().ft_code_hash(),
+                    self.issue_args().ft_out_point.tx_hash(),
+                    self.issue_args().ft_lock_hash(),
+                    tx_hash,
+                );
+
                 send_transaction(self.rpc_client(), transaction, format, color, debug)
             }
             ("transfer", Some(m)) => {
@@ -86,6 +96,7 @@ impl<'a> FortySubCommand<'a> {
                     .arg(arg::pubkey().required(true))
                     .arg(arg::amount().required(true))
                     .arg(arg::nonce().required(true))
+                    .arg(arg::proof().required(true))
                     .arg(arg::ft_code_hash().required(true))
                     .arg(arg::ft_lock_hash().required(true))
         )
@@ -112,6 +123,7 @@ pub struct TransactArgs {
     pub receiver: PublicKey,
     pub amount: u64,
     pub nonce: u64,
+    pub proof: Bytes,
     pub out_point: OutPoint,
     pub ft_out_point: OutPoint,
     pub ft_code_hash: Byte32,
@@ -245,17 +257,23 @@ impl TransactArgs {
             m, "ft-code-hash")?;
         let ft_lock_hash: H256 = FixedHashParser::<H256>::default().from_matches(
             m, "ft-lock-hash")?;
+        let proof: Bytes = m.value_of("proof").expect("expect proof").pack();
         Ok(Self {
             network_type,
             sender,
             receiver,
             amount,
             nonce,
+            proof,
             out_point,
             ft_out_point,
             ft_code_hash: Byte32::new(ft_code_hash.0),
             ft_lock_hash: Byte32::new(ft_lock_hash.0),
         })
+    }
+
+    pub fn proof(&self) -> Bytes {
+        self.proof.clone()
     }
 
     pub fn sender_privkey(&self) -> &PrivkeyWrapper {
