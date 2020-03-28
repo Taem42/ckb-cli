@@ -99,7 +99,8 @@ impl FortyBuilder {
         let witnesses = inputs
             .iter()
             .map(|_| {
-                let output_type_witness = BytesOpt::new_builder().set(Some(proof.clone())).build();
+                let output_type_witness = BytesOpt::new_builder()
+                    .set(Some(proof.clone())).build();
                 WitnessArgs::new_builder()
                     .output_type(output_type_witness)
                     .build()

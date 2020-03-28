@@ -11,6 +11,7 @@ use crate::utils::{
 use ckb_crypto::secp::{SECP256K1, Pubkey};
 use ckb_sdk::{constants::SIGHASH_TYPE_HASH, Address, AddressPayload, NetworkType, HttpRpcClient};
 use ckb_types::{
+    bytes,
     packed::{Byte32, Script},
     prelude::*,
     H160, H256,
@@ -18,7 +19,7 @@ use ckb_types::{
 use clap::{App, Arg, ArgMatches, SubCommand};
 use std::collections::HashSet;
 use ckb_types::packed::{OutPoint, Bytes, BytesVec, CellDep};
-use crate::utils::arg_parser::PubkeyHexParser;
+use crate::utils::arg_parser::{PubkeyHexParser, HexParser};
 use secp256k1::PublicKey;
 use sha2::Digest;
 use crate::utils::other::serialize_signature;
@@ -255,12 +256,24 @@ impl TransactArgs {
             m, "ft-lock-hash")?;
         let amount_hash: H256 = FixedHashParser::<H256>::default().from_matches(
             m, "amount-hash")?;
-        let proof: Bytes = m.value_of("proof").expect("expect proof").pack();
+
+
+//        let bytes = HexParser.parse(input)?;
+//        H160::from_slice(&bytes).map_err(|err| err.to_string())
+
+        let proof = m.value_of("proof")
+            .map(|input| HexParser.parse(input))
+            .expect("parse proof").expect("parse proof");
+
+//        let proof: bytes::Bytes = m.value_of("proof")
+//            .expect("expect proof")
+//            .parse()
+//            .map_err(|_| "failed to parse proof".to_string())?;
         Ok(Self {
             network_type,
             sender,
             receiver,
-            proof,
+            proof: proof.pack(),
             out_point,
             ft_out_point,
             ft_code_hash: Byte32::new(ft_code_hash.0),
